@@ -5,6 +5,8 @@
         "bcast",
         "mpiexec",
         "mysum",
-        "numprocs"
+        "numprocs",
+        "xlabel",
+        "ylabel"
     ]
 }
