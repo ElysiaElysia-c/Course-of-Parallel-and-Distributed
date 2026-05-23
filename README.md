@@ -3,4 +3,3 @@
 
 直接右键运行，只能创建一个线程
 mpiexec -n 4 python test_mpi.py  可以创建多个线程  4个
-

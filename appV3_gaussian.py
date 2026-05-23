@@ -9,12 +9,16 @@ from PIL import Image, ImageTk
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MPI Image Filter (Windows)")
-        self.geometry("980x600")
+        self.title("MPI Gaussian Blur (Windows)")
+        self.geometry("980x640")
 
         self.input_path = tk.StringVar()
         self.output_path = tk.StringVar(value=os.path.join(os.path.expanduser("~"), "Desktop", "out.jpg"))
         self.nproc = tk.IntVar(value=8)
+
+        # Only Gaussian params
+        self.ksize = tk.IntVar(value=11)       # odd
+        self.sigma = tk.DoubleVar(value=2.0)   # >0
 
         self._img_in_tk = None
         self._img_out_tk = None
@@ -38,7 +42,17 @@ class App(tk.Tk):
 
         ttk.Label(frm, text="MPI processes (-n):").grid(row=r, column=0, sticky="w")
         ttk.Spinbox(frm, from_=1, to=64, textvariable=self.nproc, width=10).grid(row=r, column=1, sticky="w", padx=6)
-        ttk.Button(frm, text="Run", command=self.run_job).grid(row=r, column=2, sticky="e")
+        ttk.Button(frm, text="Run Gaussian Blur", command=self.run_job).grid(row=r, column=2, sticky="e")
+        r += 1
+
+        ttk.Label(frm, text="Kernel size (ksize, odd):").grid(row=r, column=0, sticky="w")
+        self.ksize_sb = ttk.Spinbox(frm, from_=3, to=31, increment=2, textvariable=self.ksize, width=10)
+        self.ksize_sb.grid(row=r, column=1, sticky="w", padx=6)
+        r += 1
+
+        ttk.Label(frm, text="Sigma (>0):").grid(row=r, column=0, sticky="w")
+        self.sigma_ent = ttk.Entry(frm, textvariable=self.sigma, width=10)
+        self.sigma_ent.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         imgfrm = ttk.Frame(frm)
@@ -75,8 +89,10 @@ class App(tk.Tk):
         self._load_preview(p, which="in")
 
     def pick_output(self):
-        p = filedialog.asksaveasfilename(defaultextension=".jpg",
-                                        filetypes=[("JPEG", "*.jpg"), ("PNG", "*.png"), ("All", "*.*")])
+        p = filedialog.asksaveasfilename(
+            defaultextension=".jpg",
+            filetypes=[("JPEG", "*.jpg"), ("PNG", "*.png"), ("All", "*.*")],
+        )
         if not p:
             return
         self.output_path.set(p)
@@ -98,16 +114,34 @@ class App(tk.Tk):
     def run_job(self):
         inp = self.input_path.get().strip()
         outp = self.output_path.get().strip()
+
         if not inp or not os.path.exists(inp):
             messagebox.showerror("Error", "Choose a valid input image.")
             return
+        if not outp:
+            messagebox.showerror("Error", "Choose a valid output path.")
+            return
 
         n = int(self.nproc.get())
+        ksize = int(self.ksize.get())
+        sigma = float(self.sigma.get())
 
-        # 计算脚本路径（同目录下的 mpi_blur.py）
-        script = os.path.join(os.path.dirname(__file__), "mpi_blur.py")
+        if ksize < 3 or ksize % 2 == 0:
+            messagebox.showerror("Error", "ksize must be odd and >= 3.")
+            return
+        if sigma <= 0:
+            messagebox.showerror("Error", "sigma must be > 0.")
+            return
 
-        cmd = ["mpiexec", "-n", str(n), "python", script, "--input", inp, "--output", outp]
+        script = os.path.join(os.path.dirname(__file__), "mpi_blurV3_gaussian.py")
+
+        cmd = [
+            "mpiexec", "-n", str(n), "python", script,
+            "--input", inp, "--output", outp,
+            "--ksize", str(ksize),
+            "--sigma", str(sigma),
+        ]
+
         self._log("\n$ " + " ".join(cmd) + "\n")
 
         def worker():
