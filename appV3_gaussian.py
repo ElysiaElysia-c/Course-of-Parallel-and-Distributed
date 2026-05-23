@@ -9,7 +9,7 @@ from PIL import Image, ImageTk
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("MPI Gaussian Blur (Windows)")
+        self.title("高斯模糊")
         self.geometry("980x640")
 
         self.input_path = tk.StringVar()
@@ -30,27 +30,27 @@ class App(tk.Tk):
         frm.pack(fill="both", expand=True)
 
         r = 0
-        ttk.Label(frm, text="Input image:").grid(row=r, column=0, sticky="w")
+        ttk.Label(frm, text="输入图片路径:").grid(row=r, column=0, sticky="w")
         ttk.Entry(frm, textvariable=self.input_path, width=80).grid(row=r, column=1, sticky="we", padx=6)
-        ttk.Button(frm, text="Browse...", command=self.pick_input).grid(row=r, column=2, sticky="e")
+        ttk.Button(frm, text="浏览", command=self.pick_input).grid(row=r, column=2, sticky="e")
         r += 1
 
-        ttk.Label(frm, text="Output image:").grid(row=r, column=0, sticky="w")
+        ttk.Label(frm, text="输出图片路径:").grid(row=r, column=0, sticky="w")
         ttk.Entry(frm, textvariable=self.output_path, width=80).grid(row=r, column=1, sticky="we", padx=6)
-        ttk.Button(frm, text="Browse...", command=self.pick_output).grid(row=r, column=2, sticky="e")
+        ttk.Button(frm, text="浏览", command=self.pick_output).grid(row=r, column=2, sticky="e")
         r += 1
 
-        ttk.Label(frm, text="MPI processes (-n):").grid(row=r, column=0, sticky="w")
+        ttk.Label(frm, text="进程数量:").grid(row=r, column=0, sticky="w")
         ttk.Spinbox(frm, from_=1, to=64, textvariable=self.nproc, width=10).grid(row=r, column=1, sticky="w", padx=6)
-        ttk.Button(frm, text="Run Gaussian Blur", command=self.run_job).grid(row=r, column=2, sticky="e")
+        ttk.Button(frm, text="运行~", command=self.run_job).grid(row=r, column=2, sticky="e")
         r += 1
 
-        ttk.Label(frm, text="Kernel size (ksize, odd):").grid(row=r, column=0, sticky="w")
+        ttk.Label(frm, text="卷积核的大小（奇数）:").grid(row=r, column=0, sticky="w")
         self.ksize_sb = ttk.Spinbox(frm, from_=3, to=31, increment=2, textvariable=self.ksize, width=10)
         self.ksize_sb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        ttk.Label(frm, text="Sigma (>0):").grid(row=r, column=0, sticky="w")
+        ttk.Label(frm, text="标准差 (>0):").grid(row=r, column=0, sticky="w")
         self.sigma_ent = ttk.Entry(frm, textvariable=self.sigma, width=10)
         self.sigma_ent.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
@@ -60,8 +60,8 @@ class App(tk.Tk):
         imgfrm.columnconfigure(0, weight=1)
         imgfrm.columnconfigure(1, weight=1)
 
-        ttk.Label(imgfrm, text="Input").grid(row=0, column=0)
-        ttk.Label(imgfrm, text="Output").grid(row=0, column=1)
+        ttk.Label(imgfrm, text="输入图片预览").grid(row=0, column=0)
+        ttk.Label(imgfrm, text="输出图片预览").grid(row=0, column=1)
 
         self.preview_in = ttk.Label(imgfrm)
         self.preview_in.grid(row=1, column=0, padx=10)
@@ -69,7 +69,7 @@ class App(tk.Tk):
         self.preview_out.grid(row=1, column=1, padx=10)
 
         r += 1
-        ttk.Label(frm, text="Logs:").grid(row=r, column=0, sticky="w")
+        ttk.Label(frm, text="日志:").grid(row=r, column=0, sticky="w")
         r += 1
 
         self.txt = tk.Text(frm, height=10)
