@@ -8,6 +8,10 @@ mpiexec -n 4 python test_mpi.py  可以创建多个线程  4个
 appV3.py 前端的ui代码
 mpi_blurV3.py 后端并行处理的代码
 
+大作业：运行方式： 
+python appV3.py
+
+
 性能分析：
 固定卷积核 ksize=21，sigma=5 ，不同进程数性能对比
 p = 1 total_time_s=8.629952 comm_time_s(max)=0.000031 comp_time_s(max)=8.619437
