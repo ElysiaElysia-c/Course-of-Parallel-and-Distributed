@@ -2,7 +2,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 固定 ksize=21, sigma=5，不同进程数的数据（来自你的测试结果）
+# 画图
+
+# 固定 ksize=21, sigma=5，不同进程数的数据
 P = np.array([1, 2, 4, 6, 8], dtype=int)
 T_total = np.array([8.629952, 6.280245, 4.925080, 4.475618, 4.284471], dtype=float)
 

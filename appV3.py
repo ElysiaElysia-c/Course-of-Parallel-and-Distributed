@@ -359,7 +359,7 @@ class App(tk.Tk):
             messagebox.showerror("错误", "标准差必须 > 0。")
             return
 
-        script = os.path.join(os.path.dirname(__file__), "mpi_blurV3_gaussian.py")
+        script = os.path.join(os.path.dirname(__file__), "mpi_blurV3.py")
         cmd = [
             "mpiexec", "-n", str(n), "python", script,
             "--input", inp, "--output", outp,

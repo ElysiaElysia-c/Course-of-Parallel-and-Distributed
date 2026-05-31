@@ -3,7 +3,15 @@ import numpy as np
 from mpi4py import MPI
 from PIL import Image
 
+# rank0 读入整张 RGB 图片（形状 H×W×3）
+# 按 行划分 把图像分成 P 块（每块是连续若干行）
+# Scatterv 把每块分发给对应进程（每进程得到 local 子图）
+# 每进程计算积时需要上下邻居的边界行 → 做 halo 交换（Sendrecv）
+# 在扩展后的 ext（含 halo）上做卷积，得到 local_out
+# Gatherv 收集各进程的 local_out 回 rank0 拼成完整输出图并保存
+# 统计时间：总耗时、halo 阶段耗时、计算耗时（取最大值作为并行步耗时）
 
+# 行划分 把 H 行尽量平均分给 size 个进程。
 def split_rows(h, size, rank):
     base = h // size
     rem = h % size
@@ -11,7 +19,7 @@ def split_rows(h, size, rank):
     end = start + base + (1 if rank < rem else 0)
     return start, end
 
-
+# Scatterv 分发 给每个进程
 def scatter_rows(comm, full_img):
     """
     Scatter RGB image by contiguous row blocks using Scatterv.
@@ -53,7 +61,7 @@ def scatter_rows(comm, full_img):
     local = local_buf.reshape((local_h, w, 3))
     return local, (h, w, counts, displs)
 
-
+# Halo 行交换
 def exchange_halo(comm, local, radius):
     """
     local: (local_h, W, 3)
@@ -64,6 +72,7 @@ def exchange_halo(comm, local, radius):
     local_h, w, ch = local.shape
     assert ch == 3
 
+    # 确定上下邻居进程
     top = rank - 1
     bot = rank + 1
     has_top = top >= 0
@@ -78,9 +87,11 @@ def exchange_halo(comm, local, radius):
     send_top = local[:radius, :, :].reshape((radius, w3)).copy()
     send_bot = local[-radius:, :, :].reshape((radius, w3)).copy()
 
+    # 计时
     t0 = MPI.Wtime()
 
     if has_top:
+        # Sendrecv 交换上下边界行，tag 区分方向避免死锁
         comm.Sendrecv(send_top, dest=top, sendtag=11,
                     recvbuf=recv_top, source=top, recvtag=22)
     else:
@@ -99,7 +110,7 @@ def exchange_halo(comm, local, radius):
     ext = np.vstack([ext_top, local, ext_bot])
     return ext, (t1 - t0)
 
-
+#Gatherv 汇总输出 
 def gather_rows(comm, local_out, meta):
     """
     local_out: (local_h, W, 3)
@@ -122,7 +133,7 @@ def gather_rows(comm, local_out, meta):
         return full_buf.reshape((h, w, 3))
     return None
 
-
+# 生成高斯核
 def make_gaussian_kernel(ksize, sigma):
     r = ksize // 2
     ax = np.arange(-r, r + 1, dtype=np.float32)
@@ -131,7 +142,7 @@ def make_gaussian_kernel(ksize, sigma):
     k /= np.sum(k)
     return k
 
-
+# 卷积计算（每通道）
 def conv_from_ext(ext, kernel):
     """
     ext: (local_h + 2r, W, 3) uint8

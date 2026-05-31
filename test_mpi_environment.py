@@ -2,6 +2,7 @@ from mpi4py import MPI
 
 MAXSIZE = 1000
 
+#  测试mpi环境，计算0~999的和，验证结果是否正确。
 def main():
     comm = MPI.COMM_WORLD
     myid = comm.Get_rank()
